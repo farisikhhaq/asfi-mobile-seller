@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const AsfiSellerApp());
 }
 
@@ -17,25 +18,15 @@ class AsfiSellerApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Inter',
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
+        scaffoldBackgroundColor: const Color(0xFF0D0D1A),
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF3B82F6), // Blue 500
-          secondary: Color(0xFF10B981), // Emerald 500
-          surface: Color(0xFF1E293B), // Slate 800
-          error: Color(0xFFEF4444), // Red 500
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E293B),
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+          primary: Color(0xFF6C63FF),
+          secondary: Color(0xFFFF6584),
+          surface: Color(0xFF13132B),
+          error: Color(0xFFFF6584),
         ),
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

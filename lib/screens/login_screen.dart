@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -9,14 +10,19 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(text: 'seller@asfi.id');
+  final _passwordController = TextEditingController(text: 'seller123');
   bool _isLoading = false;
 
   void _login() async {
     setState(() => _isLoading = true);
     // Simulasi loading API
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // Simpan sesi login
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    
     setState(() => _isLoading = false);
 
     if (!mounted) return;
@@ -31,11 +37,11 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E293B),
+              Color(0xFF0D0D1A), // Warna persis seperti background Dashboard
+              Color(0xFF13132B), // Gradient halus agar tidak terlalu pekat
             ],
           ),
         ),
@@ -97,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             labelStyle: const TextStyle(color: Colors.white54),
                             prefixIcon: const Icon(Icons.email_outlined, color: Colors.white54),
                             filled: true,
-                            fillColor: Colors.black12,
+                            fillColor: const Color(0xFF1A1A2E), // Warna kotak input elegan
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide.none,
@@ -114,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             labelStyle: const TextStyle(color: Colors.white54),
                             prefixIcon: const Icon(Icons.lock_outline, color: Colors.white54),
                             filled: true,
-                            fillColor: Colors.black12,
+                            fillColor: const Color(0xFF1A1A2E),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide.none,
