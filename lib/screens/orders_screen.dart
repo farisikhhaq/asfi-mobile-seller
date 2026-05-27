@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../services/api_service.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -9,12 +11,26 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<dynamic> _orders = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _fetchOrders();
   }
+
+  Future<void> _fetchOrders() async {
+    final orders = await ApiService.getOrders();
+    if (mounted) {
+      setState(() {
+        _orders = orders;
+        _isLoading = false;
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -39,23 +55,32 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
           ],
         ),
       ),
-      body: TabBarView(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
+        : TabBarView(
         controller: _tabController,
         children: [
-          _buildOrderList(isWaiting: true),
-          _buildEmptyState('Belum ada pesanan yang sedang Anda proses.'),
-          _buildEmptyState('Tidak ada paket yang sedang dalam pengiriman.'),
-          _buildEmptyState('Belum ada pesanan selesai minggu ini.'),
+          _buildOrderList(_orders.where((o) => o['status'] == 'pending').toList(), 'Menunggu', 'Belum ada pesanan masuk.'),
+          _buildOrderList(_orders.where((o) => o['status'] == 'processing').toList(), 'Diproses', 'Belum ada pesanan yang sedang Anda proses.'),
+          _buildOrderList(_orders.where((o) => o['status'] == 'shipped').toList(), 'Dikirim', 'Tidak ada paket yang sedang dalam pengiriman.'),
+          _buildOrderList(_orders.where((o) => o['status'] == 'completed' || o['status'] == 'cancelled').toList(), 'Selesai', 'Belum ada pesanan selesai.'),
         ],
       ),
     );
   }
 
-  Widget _buildOrderList({required bool isWaiting}) {
+  Widget _buildOrderList(List<dynamic> orders, String statusLabel, String emptyMessage) {
+    if (orders.isEmpty) {
+      return _buildEmptyState(emptyMessage);
+    }
+
+    final currencyFormatter = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: isWaiting ? 2 : 0, // Mock 2 pesanan
+      itemCount: orders.length,
       itemBuilder: (context, index) {
+        final order = orders[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
@@ -74,7 +99,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                     children: [
                       const Icon(Icons.account_circle, color: Colors.white54, size: 20),
                       const SizedBox(width: 8),
-                      Text('Pembeli VIP ${index + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text(order['customer_name'] ?? 'Pembeli', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Container(
@@ -83,7 +108,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                       color: const Color(0xFFFFD93D).withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('Menunggu Konfirmasi', style: TextStyle(color: Color(0xFFFFD93D), fontSize: 10, fontWeight: FontWeight.bold)),
+                    child: Text(order['order_number'] ?? 'Order', style: const TextStyle(color: Color(0xFFFFD93D), fontSize: 10, fontWeight: FontWeight.bold)),
                   )
                 ],
               ),
@@ -97,16 +122,16 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                       color: Colors.white12,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.image, color: Colors.white24),
+                    child: const Icon(Icons.shopping_bag, color: Colors.white24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Sepatu Sneakers Pria Premium', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                        SizedBox(height: 4),
-                        Text('1 x Rp 450.000', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      children: [
+                        Text('Total Belanja', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text('Kurir: ${order['courier'] ?? '-'}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -118,21 +143,22 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Total Pendapatan', style: TextStyle(color: Colors.white54, fontSize: 11)),
-                      Text('Rp 450.000', style: TextStyle(color: Color(0xFF43E97B), fontWeight: FontWeight.bold, fontSize: 15)),
+                    children: [
+                      const Text('Total Pendapatan', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                      Text(currencyFormatter.format(order['total'] ?? 0), style: const TextStyle(color: Color(0xFF43E97B), fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan Diterima & Masuk ke Proses!')));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Terima Pesanan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                  )
+                  if (order['status'] == 'pending')
+                    ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hanya tampilan. Butuh API update.')));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6C63FF),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Terima Pesanan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    )
                 ],
               )
             ],

@@ -8,6 +8,7 @@ import 'login_screen.dart';
 import 'statistics_screen.dart';
 import 'orders_screen.dart';
 import '../services/prayer_time_service.dart';
+import 'payment_methods_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -69,11 +70,22 @@ class _HomeContentState extends State<_HomeContent> {
   PrayerData? _prayerData;
   Timer? _countdownTimer;
   String _countdownText = '';
+  String _storeName = 'Memuat...';
 
   @override
   void initState() {
     super.initState();
     _loadPrayerData();
+    _loadStoreName();
+  }
+
+  Future<void> _loadStoreName() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _storeName = prefs.getString('store_name') ?? 'Toko Official ASFI';
+      });
+    }
   }
 
   @override
@@ -176,9 +188,9 @@ class _HomeContentState extends State<_HomeContent> {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                const Text(
-                                  'Toko Official ASFI',
-                                  style: TextStyle(
+                                Text(
+                                  _storeName,
+                                  style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
@@ -349,7 +361,9 @@ class _HomeContentState extends State<_HomeContent> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       _SmallWalletAction(icon: Icons.add_box, label: 'Tambah', onTap: () {}),
-                                      _SmallWalletAction(icon: Icons.credit_card, label: 'Rekening', onTap: () {}),
+                                      _SmallWalletAction(icon: Icons.credit_card, label: 'Rekening', onTap: () {
+                                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()));
+                                      }),
                                       _SmallWalletAction(icon: Icons.open_in_new, label: 'Kunjungi', onTap: () {}),
                                     ],
                                   )
@@ -403,7 +417,9 @@ class _HomeContentState extends State<_HomeContent> {
                   }
                 ),
                 _MenuIcon(icon: Icons.local_shipping, label: 'Pengiriman', color: const Color(0xFFFFD93D), onTap: () {}),
-                _MenuIcon(icon: Icons.account_balance, label: 'Metode Bayar', color: const Color(0xFF6C63FF), onTap: () {}),
+                _MenuIcon(icon: Icons.account_balance, label: 'Metode Bayar', color: const Color(0xFF6C63FF), onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsScreen()));
+                }),
                 _MenuIcon(
                   icon: Icons.bar_chart, 
                   label: 'Statistik', 

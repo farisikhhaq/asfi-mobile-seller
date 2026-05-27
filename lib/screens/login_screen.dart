@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,25 +11,35 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController(text: 'seller@asfi.id');
-  final _passwordController = TextEditingController(text: 'seller123');
+  final _emailController = TextEditingController(text: 'kopi@asfi.id');
+  final _passwordController = TextEditingController(text: 'password');
   bool _isLoading = false;
 
   void _login() async {
     setState(() => _isLoading = true);
-    // Simulasi loading API
-    await Future.delayed(const Duration(seconds: 1));
     
-    // Simpan sesi login
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
+    // Panggil API Login
+    bool success = await ApiService.login(
+      _emailController.text.trim(), 
+      _passwordController.text
+    );
     
     setState(() => _isLoading = false);
 
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-    );
+
+    if (success) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login gagal. Periksa kembali email dan password Anda.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

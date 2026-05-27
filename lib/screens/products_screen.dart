@@ -2,8 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'add_product_screen.dart';
 
-class ProductsScreen extends StatelessWidget {
+import '../services/api_service.dart';
+
+class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
+
+  @override
+  State<ProductsScreen> createState() => _ProductsScreenState();
+}
+
+class _ProductsScreenState extends State<ProductsScreen> {
+  List<dynamic> _products = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    final products = await ApiService.getProducts();
+    if (mounted) {
+      setState(() {
+        _products = products;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,18 +47,18 @@ class ProductsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView.builder(
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF6C63FF)))
+          : _products.isEmpty
+          ? const Center(child: Text('Belum ada produk', style: TextStyle(color: Colors.white54)))
+          : ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 4, // Data dummy
+        itemCount: _products.length,
         itemBuilder: (context, index) {
-          final dummyProducts = [
-            {'name': 'ASFI Smartwatch Series 9', 'price': 2500000, 'stock': 12, 'sold': 45},
-            {'name': 'Kemeja Polos Pria Premium', 'price': 120000, 'stock': 50, 'sold': 120},
-            {'name': 'Sepatu Sneakers Kasual', 'price': 450000, 'stock': 8, 'sold': 24},
-            {'name': 'Headset Bluetooth TWS', 'price': 299000, 'stock': 0, 'sold': 88},
-          ];
-          final product = dummyProducts[index];
-          final isOutOfStock = product['stock'] == 0;
+          final product = _products[index];
+          final stock = product['stock'] ?? 0;
+          final isOutOfStock = stock <= 0;
+          final price = product['price'] ?? 0;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
@@ -61,14 +87,14 @@ class ProductsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          product['name'] as String,
+                          product['name']?.toString() ?? 'Produk Tanpa Nama',
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0).format(product['price']),
+                          NumberFormat.currency(locale: 'id', symbol: 'Rp', decimalDigits: 0).format(price),
                           style: const TextStyle(color: Color(0xFF43E97B), fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                         const SizedBox(height: 8),
@@ -76,7 +102,7 @@ class ProductsScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Stok: ${product['stock']}',
+                              'Stok: $stock',
                               style: TextStyle(
                                 color: isOutOfStock ? const Color(0xFFFF6584) : Colors.white70,
                                 fontSize: 12,
@@ -84,7 +110,7 @@ class ProductsScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Terjual: ${product['sold']}',
+                              'Terjual: ${product['total_sold'] ?? 0}',
                               style: const TextStyle(color: Colors.white54, fontSize: 12),
                             ),
                           ],
